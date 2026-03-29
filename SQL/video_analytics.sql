@@ -1,0 +1,10 @@
+CREATE TABLE video_analytics (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    video_id BIGINT,
+    views INT DEFAULT 0,
+    avg_watch_time FLOAT DEFAULT 0,
+    like_count INT DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+);

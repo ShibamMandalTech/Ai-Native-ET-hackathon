@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI News Reels</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --primary: #FF2B5E;
+            --primary-hover: #ff4772;
+            --bg: #000000;
+            --text: #ffffff;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+            pointer-events: none;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        .logo-icon {
+            color: var(--primary);
+        }
+
+        .persona-select {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 13px;
+            outline: none;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            margin-right: 10px;
+            pointer-events: auto;
+        }
+
+        .persona-select option {
+            background: #1a1a24;
+            color: white;
+        }
+
+        .generate-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 43, 94, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: auto;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 43, 94, 0.6);
+            background: var(--primary-hover);
+        }
+
+        .generate-btn:active {
+            transform: translateY(1px);
+        }
+
+        .generate-btn.loading {
+            background: #333;
+            box-shadow: none;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Main Reels Container */
+        .reels-container {
+            height: 100vh;
+            width: 100vw;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .reels-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .video-card {
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Video styling */
+        video {
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        /* Center Play/Pause/Mute feedback */
+        .playback-feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 50%;
+            display: flex;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            color: white;
+            z-index: 20;
+        }
+
+        .playback-feedback.show {
+            opacity: 1;
+            animation: fadeOut 1s forwards 0.5s;
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+        }
+
+        /* Big Double Tap Heart */
+        .big-heart {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            color: var(--primary);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+            filter: drop-shadow(0 0 20px rgba(255, 43, 94, 0.6));
+        }
+
+        .big-heart.animate {
+            animation: popHeart 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popHeart {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+
+            15% {
+                transform: translate(-50%, -50%) scale(1.5) rotate(-10deg);
+                opacity: 1;
+            }
+
+            30% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(5deg);
+                opacity: 1;
+            }
+
+            45% {
+                transform: translate(-50%, -50%) scale(1.4) rotate(-5deg);
+                opacity: 1;
+            }
+
+            70% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1.2) translateY(-40px);
+                opacity: 0;
+            }
+        }
+
+        /* UI Overlay */
+        .ui-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 60px 20px 30px 20px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 40%, rgba(0, 0, 0, 0) 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .info-section {
+            flex: 1;
+            padding-right: 60px;
+            pointer-events: auto;
+        }
+
+        .news-badge {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #fff;
+        }
+
+        .news-badge i {
+            width: 14px;
+            height: 14px;
+        }
+
+        .title {
+            font-size: 17px;
+            font-weight: 500;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Sidebar actions */
+        .interaction-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .action-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .icon-container {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: white;
+        }
+
+        .action-button:hover .icon-container {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .action-button:active .icon-container {
+            transform: scale(0.95);
+        }
+
+        .action-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .action-button.liked .icon-container {
+            background: rgba(255, 43, 94, 0.1);
+            border-color: rgba(255, 43, 94, 0.3);
+            color: var(--primary);
+        }
+
+        .action-button.liked .icon-container svg {
+            fill: var(--primary);
+            color: var(--primary);
+        }
+
+        .action-button.liked .icon-container {
+            animation: iconPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes iconPop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.3);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Progress Bar */
+        .progress-bar-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px rgba(255, 43, 94, 0.5);
+        }
+
+        /* Empty State */
+        .empty-state {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px;
+            background: radial-gradient(circle at center, #1a1a24 0%, #000 100%);
+        }
+
+        .empty-icon {
+            color: rgba(255, 255, 255, 0.15);
+            margin-bottom: 24px;
+        }
+
+        .empty-title {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .empty-subtitle {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.5);
+            max-width: 400px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        /* Initial Global Loading State */
+        .global-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .global-loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Initial Loading Screen -->
+    <div class="global-loading" id="globalLoading">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center;">
+            <i data-lucide="loader-2" class="loader"
+                style="width: 50px; height: 50px; color: var(--primary); border: none;"></i>
+            <h2 style="color: white; font-weight: 600; font-size: 20px; letter-spacing: 1px;" id="loadingText">Loading
+                AI Videos...</h2>
+            <p style="color: rgba(255,255,255,0.5); font-size: 14px; max-width: 300px;" id="loadingSubtext">Connecting
+                to neuro-engine...</p>
+        </div>
+    </div>
+
+    <!-- Top Navigation -->
+    <div class="top-nav">
+        <div class="logo">
+            <i data-lucide="play-square" class="logo-icon"></i>
+            NewsReels
+        </div>
+        <div style="display: flex; align-items: center;">
+            <select id="personaSelect" class="persona-select">
+                <option value="General Audience">General Audience</option>
+                <option value="Student">Student</option>
+                <option value="Tech Enthusiast">Tech Enthusiast</option>
+                <option value="Wall Street Investor">Wall Street Investor</option>
+                <option value="Sports Fan">Sports Fan</option>
+            </select>
+            <button class="generate-btn" id="generateBtn" onclick="generateVideos()">
+                <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+                <span>Generate</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Container for swipeable videos -->
+    <div class="reels-container" id="reels"></div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        let currentVideo = null;
+        let playPromise = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadVideos();
+        });
+
+        async function loadVideos() {
+            try {
+                const res = await fetch("/get_videos");
+                const data = await res.json();
+
+                const container = document.getElementById("reels");
+                container.innerHTML = "";
+
+                if (!data.videos || data.videos.length === 0) {
+                    renderEmptyState(container);
+                } else {
+                    data.videos.forEach(video => {
+                        container.appendChild(createVideoCard(video));
+                    });
+                    // Re-init icons for dynamic content
+                    lucide.createIcons();
+                    setupScrollAutoPlay();
+                }
+
+                // Hide global loader once loaded
+                const loader = document.getElementById("globalLoading");
+                if (loader) loader.classList.add('hidden');
+
+            } catch (error) {
+                console.error("Failed to load videos:", error);
+                renderEmptyState(document.getElementById("reels"), "Connection Error", "Could not connect to the server.");
+                document.getElementById("globalLoading").classList.add('hidden');
+            }
+        }
+
+        function createVideoCard(video) {
+            const card = document.createElement("div");
+            card.className = "video-card";
+
+            // Note: removing muted attribute so videos play with sound by default per user request
+            card.innerHTML = `
+                <video src="${video.video_path}" loop playsinline></video>
+                
+                <!-- Double tap heart animation element -->
+                <i data-lucide="heart" class="big-heart" style="width: 100px; height: 100px;" fill="currentColor"></i>
+                
+                <!-- Center Play/Pause/Mute Feedback -->
+                <div class="playback-feedback">
+                    <i data-lucide="volume-2" class="feedback-icon" style="width: 32px; height: 32px;"></i>
+                </div>
+
+                <div class="ui-overlay">
+                    <div class="info-section">
+                        <div class="news-badge">
+                            <i data-lucide="zap"></i> BREAKING
+                        </div>
+                        <div class="title">${video.title || "Latest AI News Update"}</div>
+                    </div>
+
+                    <div class="interaction-sidebar">
+                        <button class="action-button prev-btn" onclick="scrollToPrev(this)">
+                            <div class="icon-container">
+                                <i data-lucide="chevron-up"></i>
+                            </div>
+                            <span class="action-label">Prev</span>
+                        </button>
+
+                        <button class="action-button next-btn" onclick="scrollToNext(this)">
+                            <div class="icon-container">
+                                <i data-lucide="chevron-down"></i>
+                            </div>
+                            <span class="action-label">Next</span>
+                        </button>
+
+                        <button class="action-button play-pause-btn" onclick="togglePlayPause(this)">
+                            <div class="icon-container">
+                                <i data-lucide="pause"></i>
+                            </div>
+                            <span class="action-label play-label">Pause</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Progress Bar -->
+                <div class="progress-bar-container" onclick="seekVideo(event, this)">
+                    <div class="progress-bar"></div>
+                </div>
+            `;
+
+            const videoElement = card.querySelector('video');
+            const doubleTapHeart = card.querySelector('.big-heart');
+            const feedback = card.querySelector('.playback-feedback');
+            const feedbackIcon = feedback.querySelector('.feedback-icon');
+            const progressBar = card.querySelector('.progress-bar');
+
+            // Update progress bar
+            videoElement.addEventListener('timeupdate', () => {
+                const percentage = (videoElement.currentTime / videoElement.duration) * 100;
+                progressBar.style.width = percentage + '%';
+            });
+
+            // Double tap & single tap logic
+            let lastTap = 0;
+            videoElement.addEventListener('click', (e) => {
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
+
+                if (tapLength < 300 && tapLength > 0) {
+                    // Double Tap (Like)
+                    e.preventDefault();
+
+                    // Pop heart animation to simulate a 'like'
+                    doubleTapHeart.classList.remove('animate');
+                    void doubleTapHeart.offsetWidth; // trigger reflow
+                    doubleTapHeart.classList.add('animate');
+
+                } else {
+                    // Single Tap (Toggle Mute/Play)
+                    // We assume reels typically toggle play/pause or mute. Let's toggle mute for better UX!
+                    setTimeout(() => {
+                        if (new Date().getTime() - lastTap >= 300) {
+                            videoElement.muted = !videoElement.muted;
+
+                            // Show volume feedback
+                            feedbackIcon.setAttribute("data-lucide", videoElement.muted ? "volume-x" : "volume-2");
+                            lucide.createIcons({ root: feedback });
+
+                            feedback.classList.remove('show');
+                            void feedback.offsetWidth;
+                            feedback.classList.add('show');
+                        }
+                    }, 300);
+                }
+                lastTap = currentTime;
+            });
+
+            return card;
+        }
+
+        function renderEmptyState(container, title = "No News Generated Yet", subtitle = "Click Generate to run the AI processing pipeline and create your first video reel. This may take a moment.") {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i data-lucide="film" class="empty-icon" style="width: 80px; height: 80px; stroke-width: 1;"></i>
+                    <h2 class="empty-title">${title}</h2>
+                    <p class="empty-subtitle">${subtitle}</p>
+                    <button class="generate-btn" style="pointer-events: auto;" onclick="generateVideos()">
+                        <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+                        <span>Start Generating</span>
+                    </button>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function setupScrollAutoPlay() {
+            const videos = document.querySelectorAll("video");
+
+            if (videos.length === 0) return;
+
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // Pause previous video
+                        if (currentVideo && currentVideo !== entry.target) {
+                            currentVideo.pause();
+                            currentVideo.currentTime = 0; // Rewind
+                        }
+
+                        currentVideo = entry.target;
+
+                        playPromise = entry.target.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(error => console.log('Autoplay prevented:', error));
+                        }
+                    } else {
+                        entry.target.pause();
+                    }
+                });
+            }, {
+                threshold: 0.6 // Trigger when 60% of video is visible
+            });
+
+            videos.forEach(video => observer.observe(video));
+        }
+
+        function seekVideo(e, container) {
+            const video = container.parentElement.querySelector('video');
+            if (!video) return;
+            const rect = container.getBoundingClientRect();
+            const clickPosition = e.clientX - rect.left;
+            const percentage = clickPosition / container.offsetWidth;
+            video.currentTime = percentage * video.duration;
+        }
+
+        function scrollToPrev(btn) {
+            const currentCard = btn.closest('.video-card');
+            const prevCard = currentCard.previousElementSibling;
+            if (prevCard && prevCard.classList.contains('video-card')) {
+                prevCard.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                // Loop to the last video
+                const allCards = document.querySelectorAll('.reels-container .video-card');
+                if (allCards.length > 0) {
+                    allCards[allCards.length - 1].scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        }
+
+        function scrollToNext(btn) {
+            const currentCard = btn.closest('.video-card');
+            const nextCard = currentCard.nextElementSibling;
+            if (nextCard && nextCard.classList.contains('video-card')) {
+                nextCard.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                // Loop back to the first video
+                const firstCard = document.querySelector('.reels-container .video-card:first-child');
+                if (firstCard) {
+                    firstCard.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        }
+
+        function togglePlayPause(btn) {
+            const currentCard = btn.closest('.video-card');
+            const video = currentCard.querySelector('video');
+            const icon = btn.querySelector('i');
+            const label = btn.querySelector('.play-label');
+
+            if (video.paused) {
+                video.play();
+                icon.setAttribute("data-lucide", "pause");
+                label.innerText = "Pause";
+            } else {
+                video.pause();
+                icon.setAttribute("data-lucide", "play");
+                label.innerText = "Play";
+            }
+            lucide.createIcons({ root: btn });
+
+            // Show center screen feedback
+            const feedback = currentCard.querySelector('.playback-feedback');
+            const feedbackIcon = feedback.querySelector('.feedback-icon');
+            feedbackIcon.setAttribute("data-lucide", video.paused ? "play" : "pause");
+            lucide.createIcons({ root: feedback });
+
+            feedback.classList.remove('show');
+            void feedback.offsetWidth;
+            feedback.classList.add('show');
+        }
+
+        async function generateVideos() {
+            const btn = document.getElementById("generateBtn");
+            const btnText = btn.querySelector("span");
+            const persona = document.getElementById("personaSelect").value;
+
+            // Set loading state
+            btn.classList.add("loading");
+            btnText.innerText = "Generating...";
+
+            try {
+                // Determine current video state before we start generating
+                const initialRes = await fetch("/get_videos");
+                const initialData = await initialRes.json();
+                const initialIds = initialData.videos ? initialData.videos.map(v => v.id).join(",") : "";
+
+                await fetch("/generate_videos", {
+                    method: "POST",
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_type: persona })
+                });
+
+                // Visual feedback that background task started
+                const loader = document.getElementById("globalLoading");
+                const loadingText = document.getElementById("loadingText");
+                const loadingSubtext = document.getElementById("loadingSubtext");
+
+                if (loader && loadingText) {
+                    loader.classList.remove("hidden");
+                    loadingText.innerText = `Generating AI Reels...`;
+                    if (loadingSubtext) loadingSubtext.innerText = `Crafting tailored content for ${persona}. This may take a couple of minutes...`;
+                }
+
+                // Poll every 5 seconds to check if a new video appeared
+                const pollInterval = setInterval(async () => {
+                    const res = await fetch("/get_videos");
+                    const data = await res.json();
+
+                    if (data.videos && data.videos.length > 0) {
+                        const newIds = data.videos.map(v => v.id).join(",");
+
+                        // Stop polling if the list of loaded video IDs changes AND pipeline is done
+                        if (newIds !== initialIds && data.is_generating === false) {
+                            clearInterval(pollInterval);
+                            loadVideos(); // Reload the UI once NEW videos are found
+                            btn.classList.remove("loading");
+                            btnText.innerText = "Generate";
+
+                            const loader = document.getElementById("globalLoading");
+                            if (loader) loader.classList.add("hidden");
+                        }
+                    }
+                }, 5000);
+
+                // 5-minute timeout on polling to account for LLM processing
+                setTimeout(() => {
+                    clearInterval(pollInterval);
+                    btn.classList.remove("loading");
+                    btnText.innerText = "Generate";
+
+                    if (loader) loader.classList.add("hidden");
+
+                    // Reload anyway in case they were generated but fell behind in order
+                    loadVideos();
+                }, 300000);
+
+            } catch (e) {
+                console.error("Error triggering generation", e);
+                alert("Failed to start pipeline.");
+                btn.classList.remove("loading");
+                btnText.innerText = "Generate";
+            }
+        }
+    </script>
+</body>
+
+</html>

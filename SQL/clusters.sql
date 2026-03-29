@@ -1,0 +1,6 @@
+CREATE TABLE clusters (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    embedding BLOB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

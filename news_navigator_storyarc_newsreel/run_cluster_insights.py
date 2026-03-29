@@ -1,0 +1,3 @@
+from services.cluster_insight_service import generate_cluster_insights
+
+generate_cluster_insights()

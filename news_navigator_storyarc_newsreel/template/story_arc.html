@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Story Arc Intelligence - NewsNavigator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+            background: #050b14;
+            color: #64ffda;
+            padding: 30px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #64ffda;
+            text-shadow: 0 0 12px rgba(100, 255, 218, 0.4);
+            border-bottom: 1px solid #1d2d50;
+            padding-bottom: 20px;
+            margin-bottom: 10px;
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header-query {
+            text-align: center;
+            color: #8892b0;
+            margin-bottom: 40px;
+            font-size: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* THE CYBER GRID */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            font-size: 18px;
+        }
+
+        .story-panel,
+        .watch-panel {
+            grid-column: 1 / -1;
+            /* Spans full width */
+        }
+
+        .panel {
+            background: rgba(17, 34, 64, 0.6);
+            border: 1px solid #233554;
+            border-radius: 6px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            position: relative;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+
+        /* Top Glowing Neon Strip */
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #64ffda;
+            opacity: 0.8;
+            box-shadow: 0 0 12px #64ffda;
+        }
+
+        .panel:hover {
+            border-color: #64ffda;
+            background: rgba(17, 34, 64, 0.9);
+            transform: translateY(-2px);
+        }
+
+        .panel-header {
+            color: #ccd6f6;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-bottom: 1px dashed #233554;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .panel div:not(.panel-header) {
+            color: #8892b0;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .panel div p {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .panel div b {
+            color: #64ffda;
+            /* Green highlighting */
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.4;
+                text-shadow: none;
+            }
+
+            50% {
+                opacity: 1;
+                text-shadow: 0 0 10px #64ffda;
+            }
+
+            100% {
+                opacity: 0.4;
+                text-shadow: none;
+            }
+        }
+
+        @keyframes cyber-color-cycle {
+            0% {
+                color: #ff007f;
+                text-shadow: 0 0 8px rgba(255, 0, 127, 0.6);
+            }
+
+            20% {
+                color: #00f2fe;
+                text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+            }
+
+            40% {
+                color: #4facfe;
+                text-shadow: 0 0 8px rgba(79, 172, 254, 0.6);
+            }
+
+            60% {
+                color: #f2a900;
+                text-shadow: 0 0 8px rgba(242, 169, 0, 0.6);
+            }
+
+            80% {
+                color: #eaf200;
+                text-shadow: 0 0 8px rgba(234, 242, 0, 0.6);
+            }
+
+            100% {
+                color: #ff007f;
+                text-shadow: 0 0 8px rgba(255, 0, 127, 0.6);
+            }
+        }
+
+        .watch-link {
+            cursor: pointer;
+            padding: 12px 14px;
+            background: rgba(10, 25, 47, 0.4);
+            border-left: 2px solid #64ffda;
+            border-radius: 4px;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            animation: cyber-color-cycle 5s infinite linear;
+        }
+
+        .watch-link:hover {
+            background: rgba(100, 255, 218, 0.1);
+            color: #fff !important;
+            text-shadow: 0 0 10px #fff;
+            transform: translateX(3px);
+            box-shadow: inset 0 0 10px rgba(100, 255, 218, 0.2);
+        }
+
+        .watch-panel .panel-header {
+            animation: cyber-color-cycle 5s infinite linear;
+        }
+
+        .loading {
+            color: #64ffda;
+            text-align: center;
+            font-size: 16px;
+            margin-top: 80px;
+            animation: pulse 1.5s infinite;
+            letter-spacing: 1.5px;
+        }
+    </style>
+    <script>
+        // Auto-detect backend API host
+        const API_HOST = window.location.hostname || "127.0.0.1";
+        const API_BASE = window.location.protocol === "https:" ? `https://${API_HOST}:5000` : `http://${API_HOST}:5000`;
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>[ INTELLIGENCE ARC ]</h1>
+        <div class="header-query" id="query-display"></div>
+
+        <div id="loading" class="loading"></div>
+
+        <div class="tech-grid" id="storyarc-content" style="display: none;">
+
+            <div class="panel story-panel">
+                <div class="panel-header">📝 NARRATIVE ANALYSIS</div>
+                <div id="panel-story"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">⏱️ TIMELINE OF EVENTS</div>
+                <div id="panel-timeline"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">📊 SENTIMENT TREND</div>
+                <div id="panel-sentiment"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">👤 KEY ENTITIES / PLAYERS</div>
+                <div id="panel-players"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">⚠️ CONTRADICTIONS DETECTED</div>
+                <div id="panel-contradictions"></div>
+            </div>
+
+            <div class="panel watch-panel">
+                <div class="panel-header">🔭 FORECAST & WHAT TO WATCH</div>
+                <div id="panel-watch"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const question = urlParams.get('q');
+
+            const queryDisplay = document.getElementById("query-display");
+            const loadingIndicator = document.getElementById("loading");
+            const grid = document.getElementById("storyarc-content");
+
+            if (!question) {
+                loadingIndicator.innerHTML = "❌ UNAUTHORIZED. LAUNCH VIA DASHBOARD PROXY.";
+                loadingIndicator.style.animation = "none";
+                loadingIndicator.style.color = "#ef4444";
+                return;
+            }
+
+            queryDisplay.innerText = `Heading: [ ${question} ]`;
+            loadingIndicator.innerHTML = "⏳ COMPILING TELEMETRY & GLOBAL VECTORS... [ETA: 10s]";
+
+            try {
+                const res = await fetch(`${API_BASE}/story_arc`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: question })
+                });
+
+                const data = await res.json();
+
+                // Hide loading, show grid
+                loadingIndicator.style.display = "none";
+                grid.style.display = "grid";
+
+                // Section Arrays
+                const sections = {
+                    story: [],
+                    timeline: [],
+                    sentiment: [],
+                    players: [],
+                    contradictions: [],
+                    watch: []
+                };
+
+                let current = "story"; // Default if no header is found at the very top
+
+                // Smart Parser
+                data.story_arc.split("\n").forEach(line => {
+                    const l = line.toLowerCase().trim();
+
+                    // Loosely check if line contains a recognizable header
+                    const isHeader = /^[*#\s\d.-]*\s*(in depth|timeline|sentiment|key play|contradict|what to watch|forecast)/.test(l);
+
+                    if (isHeader) {
+                        if (l.includes("in depth") || l.includes("narrative") || l.includes("story")) current = "story";
+                        else if (l.includes("timeline")) current = "timeline";
+                        else if (l.includes("sentiment")) current = "sentiment";
+                        else if (l.includes("key play") || l.includes("entities")) current = "players";
+                        else if (l.includes("contradict")) current = "contradictions";
+                        else if (l.includes("watch") || l.includes("forecast")) current = "watch";
+                    } else {
+                        sections[current].push(line);
+                    }
+                });
+
+                // Render into DOM
+                for (let key in sections) {
+                    const box = document.getElementById("panel-" + key);
+                    if (!box) continue;
+
+                    sections[key].forEach(line => {
+                        const originalTxt = line.trim();
+                        let cleanLine = line.replace(/\*\*/g, '<b>').replace(/\*/g, '');
+                        const txt = cleanLine.trim();
+                        if (txt.length > 0) {
+                            if (key === "watch" && (originalTxt.startsWith("-") || originalTxt.startsWith("*") || originalTxt.startsWith("•") || /^\d+[.)]/.test(originalTxt))) {
+                                const rawQ = originalTxt.replace(/^[-*•\d.)]+\s*/, "").replace(/\*\*/g, '').replace(/\*/g, '').replace(/<[^>]+>/g, "").trim();
+                                const encodedQ = encodeURIComponent(rawQ);
+                                box.innerHTML += `<div class="watch-link" onclick="window.location.href='/?q=${encodedQ}'">${cleanLine}</div>`;
+                            } else {
+                                box.innerHTML += `<p>${cleanLine}</p>`;
+                            }
+                        }
+                    });
+                }
+
+            } catch (err) {
+                loadingIndicator.innerHTML = "❌ FATAL ERROR: CONNECTION SEVERED. IS THE PYTHON ENGINE RUNNING?";
+                loadingIndicator.style.animation = "none";
+                loadingIndicator.style.color = "#ef4444";
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+
+</html>
+
+

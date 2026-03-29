@@ -1,0 +1,12 @@
+faiss-cpu
+sentence-transformers
+mysql-connector-python
+moviepy
+gtts
+pillow
+numpy
+flask
+requests
+beautifulsoup4
+openai
+flask-cors

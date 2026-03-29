@@ -1,0 +1,341 @@
+import os
+import json
+import time
+import requests
+from ..config import settings
+
+GEMINI_MODEL_CANDIDATES = [settings.GEMINI_MODEL, "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"]
+
+
+def _build_supervisor_prompt(events: list, violations: int, coding_scores: dict, exam_duration: int) -> str:
+    log_summary = "\\n".join([f"[{e.get('timeStr', '00:00:00')}] {e.get('type')}: {e.get('msg')}" for e in events])
+    coding_summary = ", ".join([f"Q{k}: {v}%" for k, v in coding_scores.items()]) if coding_scores else "No coding questions attempted."
+
+    return f"""
+    You are an expert AI Exam Supervisor. Review the following student's telemetry data from a {exam_duration} second exam.
+    The data was generated real-time by a local computer vision hook.
+
+    --- EXAM TIMELINE LOGS ---
+    {log_summary if log_summary else 'No events recorded. Perfect behavior.'}
+
+    Total Hard Violations: {violations}
+    Coding Scores: {coding_summary}
+    --------------------------
+
+    Your task is to act as a reasonable, intelligent human proctor.
+    1. Read the timeline of events. Are they repetitively looking offscreen or frequently switching tabs?
+    2. Contextualize the coding scores vs behavior: Do the timeline alerts align with them looking at a split screen or writing code?
+    3. Synthesize the raw data into a narrative paragraph evaluating the true risk. Do not simply regurgitate the logs.
+
+    Return ONLY a valid JSON object matching the following structure exactly (no markdown formatting, no comments):
+    {{
+        "probability_cheating": "High" | "Medium" | "Low" | "None",
+        "reasoning": "Your detailed 2-3 sentence paragraph reasoning here...",
+        "recommended_action": "Pass" | "Review Timeline" | "Invalidate Exam"
+    }}
+    """
+
+
+def _parse_json_text(text: str) -> dict:
+    cleaned = text.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    if cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    return json.loads(cleaned.strip())
+
+
+def _run_groq(prompt: str) -> dict:
+    api_key = settings.GROQ_API_KEY or os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise RuntimeError("Missing GROQ_API_KEY")
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": settings.GROQ_MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are an expert AI Exam Supervisor. Return only a valid JSON object.",
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ],
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
+    }
+
+    response = None
+    for attempt in range(3):
+        response = requests.post(url, headers=headers, json=payload, timeout=12)
+        if response.status_code != 429:
+            break
+        if attempt < 2:
+            time.sleep(1.5 * (attempt + 1))
+
+    if response is None:
+        raise RuntimeError("Groq request did not return a response")
+
+    if response.status_code == 429:
+        raise RuntimeError("Groq API quota or rate limit exceeded")
+    if response.status_code in (401, 403):
+        raise RuntimeError("Groq API key is invalid or lacks required permissions")
+    if response.status_code == 404:
+        raise RuntimeError("Configured Groq model is unavailable for this key/project")
+
+    response.raise_for_status()
+    data = response.json()
+    choices = data.get("choices", [])
+    if not choices:
+        raise ValueError("No response from Groq")
+
+    text = choices[0].get("message", {}).get("content", "").strip()
+    if not text:
+        raise ValueError("Empty response from Groq")
+
+    return _parse_json_text(text)
+
+
+def _run_openai(prompt: str) -> dict:
+    api_key = settings.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Missing OPENAI_API_KEY")
+
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": settings.OPENAI_MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are an expert AI Exam Supervisor. Return only a valid JSON object.",
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            },
+        ],
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
+    }
+
+    response = None
+    for attempt in range(3):
+        response = requests.post(url, headers=headers, json=payload, timeout=15)
+        if response.status_code != 429:
+            break
+        if attempt < 2:
+            time.sleep(1.5 * (attempt + 1))
+
+    if response is None:
+        raise RuntimeError("OpenAI request did not return a response")
+
+    if response.status_code == 429:
+        raise RuntimeError("OpenAI API quota or rate limit exceeded")
+    if response.status_code in (401, 403):
+        raise RuntimeError("OpenAI API key is invalid or lacks required permissions")
+    if response.status_code == 404:
+        raise RuntimeError("Configured OpenAI model is unavailable for this key/project")
+
+    response.raise_for_status()
+    data = response.json()
+    choices = data.get("choices", [])
+    if not choices:
+        raise ValueError("No response from OpenAI")
+
+    text = choices[0].get("message", {}).get("content", "").strip()
+    if not text:
+        raise ValueError("Empty response from OpenAI")
+
+    return _parse_json_text(text)
+
+
+def _run_gemini(prompt: str) -> dict:
+    api_key = settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("Missing GEMINI_API_KEY")
+
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.2,
+            "responseMimeType": "application/json",
+        },
+    }
+
+    had_404 = False
+    had_429 = False
+    had_auth_error = False
+    seen_models = set()
+
+    for model in GEMINI_MODEL_CANDIDATES:
+        if not model or model in seen_models:
+            continue
+        seen_models.add(model)
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        response = requests.post(url, headers=headers, json=payload, timeout=12)
+
+        if response.status_code == 404:
+            had_404 = True
+            continue
+        if response.status_code == 429:
+            had_429 = True
+            continue
+        if response.status_code in (401, 403):
+            had_auth_error = True
+            continue
+
+        response.raise_for_status()
+        data = response.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            raise ValueError("No response from Gemini")
+
+        text = candidates[0]["content"]["parts"][0]["text"].strip()
+        return _parse_json_text(text)
+
+    if had_auth_error:
+        raise RuntimeError("Gemini API key is invalid or lacks required permissions")
+    if had_429:
+        raise RuntimeError("Gemini API quota or rate limit exceeded")
+    if had_404:
+        raise RuntimeError("Configured Gemini model is unavailable for this key/project")
+
+    raise RuntimeError("No supported Gemini model available")
+
+
+def _reason_from_error(message: str, provider_hint: str = "configured") -> str:
+    lowered = (message or "").lower()
+    if "quota" in lowered or "rate limit" in lowered or "429" in lowered:
+        return f"Agentic AI request limit reached for the {provider_hint} provider. Retry later or use another provider/key."
+    if "invalid" in lowered or "permission" in lowered or "401" in lowered or "403" in lowered:
+        return f"{provider_hint.title()} API key is invalid or missing required permissions for model inference."
+    if "unavailable" in lowered or "not found" in lowered or "404" in lowered:
+        return f"Configured model is unavailable for the {provider_hint} provider/key."
+    if "missing groq_api_key" in lowered:
+        return "Agentic AI Supervisor disabled (Missing GROQ_API_KEY). Proceed with standard manual review of logs."
+    if "missing gemini_api_key" in lowered:
+        return "Agentic AI Supervisor disabled (Missing GEMINI_API_KEY). Proceed with standard manual review of logs."
+    if "missing openai_api_key" in lowered:
+        return "Agentic AI Supervisor disabled (Missing OPENAI_API_KEY). Proceed with standard manual review of logs."
+    return "Agentic AI failed to process the request due to provider availability, network, or response parsing issues."
+
+
+def _normalize_report(report: dict) -> dict:
+    probability = report.get("probability_cheating", "Unknown")
+    reasoning = report.get("reasoning", "No reasoning provided by model.")
+    action = report.get("recommended_action", "Manual Review Required")
+
+    return {
+        "probability_cheating": probability,
+        "reasoning": reasoning,
+        "recommended_action": action,
+    }
+
+def generate_supervisor_report(events: list, violations: int, coding_scores: dict, exam_duration: int) -> dict:
+    """
+    Acts as an AI Proctoring Supervisor. Analyzes the raw logs generated by the client 
+    (MediaPipe WebAssembly) and intelligently synthesizes them into a human-readable 
+    assessment report preventing strict false positives.
+    """
+    prompt = _build_supervisor_prompt(events, violations, coding_scores, exam_duration)
+    provider = (settings.AI_PROVIDER or "auto").strip().lower()
+
+    openai_key_present = bool(settings.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY"))
+    groq_key_present = bool(settings.GROQ_API_KEY or os.getenv("GROQ_API_KEY"))
+    gemini_key_present = bool(settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY"))
+
+    if provider == "openai":
+        if not openai_key_present:
+            return {
+                "probability_cheating": "Unknown",
+                "reasoning": "Agentic AI Supervisor disabled (Missing OPENAI_API_KEY). Proceed with standard manual review of logs.",
+                "recommended_action": "Manual Review Required",
+            }
+        try:
+            return _normalize_report(_run_openai(prompt))
+        except Exception as e:
+            return {
+                "probability_cheating": "Error",
+                "reasoning": _reason_from_error(str(e), "openai"),
+                "recommended_action": "Manual Review Required",
+            }
+
+    if provider == "groq":
+        if not groq_key_present:
+            return {
+                "probability_cheating": "Unknown",
+                "reasoning": "Agentic AI Supervisor disabled (Missing GROQ_API_KEY). Proceed with standard manual review of logs.",
+                "recommended_action": "Manual Review Required",
+            }
+        try:
+            return _normalize_report(_run_groq(prompt))
+        except Exception as e:
+            return {
+                "probability_cheating": "Error",
+                "reasoning": _reason_from_error(str(e), "groq"),
+                "recommended_action": "Manual Review Required",
+            }
+
+    if provider == "gemini":
+        if not gemini_key_present:
+            return {
+                "probability_cheating": "Unknown",
+                "reasoning": "Agentic AI Supervisor disabled (Missing GEMINI_API_KEY). Proceed with standard manual review of logs.",
+                "recommended_action": "Manual Review Required",
+            }
+        try:
+            return _normalize_report(_run_gemini(prompt))
+        except Exception as e:
+            return {
+                "probability_cheating": "Error",
+                "reasoning": _reason_from_error(str(e), "gemini"),
+                "recommended_action": "Manual Review Required",
+            }
+
+    # auto mode: prefer OpenAI, then Groq, then Gemini.
+    errors = []
+
+    if openai_key_present:
+        try:
+            return _normalize_report(_run_openai(prompt))
+        except Exception as e:
+            errors.append(str(e))
+
+    if groq_key_present:
+        try:
+            return _normalize_report(_run_groq(prompt))
+        except Exception as e:
+            errors.append(str(e))
+
+    if gemini_key_present:
+        try:
+            return _normalize_report(_run_gemini(prompt))
+        except Exception as e:
+            errors.append(str(e))
+
+    if not openai_key_present and not groq_key_present and not gemini_key_present:
+        return {
+            "probability_cheating": "Unknown",
+            "reasoning": "Agentic AI Supervisor disabled (Missing OPENAI_API_KEY, GROQ_API_KEY, and GEMINI_API_KEY). Proceed with standard manual review of logs.",
+            "recommended_action": "Manual Review Required",
+        }
+
+    return {
+        "probability_cheating": "Error",
+        "reasoning": _reason_from_error(" | ".join(errors), "configured"),
+        "recommended_action": "Manual Review Required",
+    }
