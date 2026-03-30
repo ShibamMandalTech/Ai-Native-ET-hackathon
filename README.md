@@ -13,6 +13,17 @@ Before running the project natively, ensure your machine meets the following env
 3. **Ollama (Optional but Recommended)**: If you intend to use local LLM fallback mechanisms when cloud models fail (as defined in the code), you need the [Ollama local server](https://ollama.com/) running on port `11434`.
 
 ---
+### File Structure
+ET Ai Hackathon/
+│
+├── cluster_state.json
+├── faiss_index.bin
+├── metadata.pkl
+├── requirements.txt
+├── requirments.txt
+├── run_all.bat
+├── extra/
+---
 
 ##  Installation & Setup
 
