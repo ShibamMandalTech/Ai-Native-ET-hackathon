@@ -14,6 +14,49 @@ Before running the project natively, ensure your machine meets the following env
 
 ---
 ### File Structure
+# 🧠 NewsNavigator & StoryArc System  
+### AI-Powered Multi-Agent News Intelligence & Storytelling Platform
+
+---
+
+## 🚀 Overview
+
+**NewsNavigator & StoryArc** is a modular, multi-agent AI system that:
+- Collects real-time news from multiple sources  
+- Categorizes and clusters similar news articles  
+- Generates summaries (short, deep, timeline-based)  
+- Converts news into interactive stories, scripts, and videos  
+
+The system is designed for scalability, automation, and intelligent storytelling.
+
+---
+
+## 🏗️ System Architecture
+
+The system is divided into three core subsystems:
+
+### 1️⃣ News Collector (Data Ingestion)
+- Scrapes news from sources  
+- Uses AI agents to classify and plan queries  
+- Stores raw data  
+
+### 2️⃣ News Categoriser (Processing & Intelligence)
+- Clusters similar articles  
+- Generates summaries (short, deep, structured)  
+- Uses FAISS for similarity search  
+
+### 3️⃣ News Navigator & StoryArc (Output Generation)
+- Creates scripts, audio, and visuals  
+- Generates story timelines  
+- Produces video/news reels
+
+- ![System Architecture](/architecture.png)
+
+---
+
+## 📁 Project Structure
+
+```
 ET Ai Hackathon/
 │
 ├── cluster_state.json
@@ -23,6 +66,239 @@ ET Ai Hackathon/
 ├── requirments.txt
 ├── run_all.bat
 ├── extra/
+│
+├── news_categoriser/
+│   ├── categoriser_main.py
+│   ├── config.py
+│   ├── requirments.txt
+│   │
+│   ├── agents/
+│   │   ├── cluster_agent.py
+│   │   ├── decision_agent.py
+│   │   ├── deep_agent.py
+│   │   ├── short_agent.py
+│   │   ├── summary_agent.py
+│   │
+│   ├── db/
+│   │   ├── connection.py
+│   │   ├── queries.py
+│   │
+│   ├── services/
+│   │   ├── error_handler.py
+│   │   ├── executor.py
+│   │
+│   ├── tools/
+│       ├── llm_client.py
+│       ├── scraper.py
+│
+├── news_collector/
+│   ├── collector_main.py
+│   ├── worker.py
+│   │
+│   ├── agents/
+│   │   ├── classifier_agent.py
+│   │   ├── collector_agent.py
+│   │   ├── planner_agent.py
+│   │   ├── query_agent.py
+│   │   ├── response_agent.py
+│   │   ├── search_agent.py
+│   │
+│   ├── core/
+│   │   ├── agent_manager.py
+│   │   ├── llm.py
+│   │
+│   ├── tools/
+│       ├── db.py
+│       ├── scraper.py
+│       ├── storage.py
+│
+├── news_navigator_storyarc_newsreel/
+│   ├── app.py
+│   ├── config.py
+│   ├── scheduler.py
+│   ├── scheduler2.py
+│   ├── run_processor.py
+│   ├── run_cluster_insights.py
+│   ├── test.py
+│   ├── test_js.py
+│   ├── test_pipeline.py
+│   ├── check_videos.py
+│   ├── check_videos_quick.py
+│   │
+│   ├── cluster_state.json
+│   ├── faiss_index.bin
+│   ├── metadata.pkl
+│   ├── requirments.txt
+│   │
+│   ├── agents/
+│   │   ├── engagement_agent.py
+│   │   ├── personalization_agent.py
+│   │   ├── script_agent.py
+│   │   ├── selector_agent.py
+│   │   ├── video_agent.py
+│   │   ├── visual_agent.py
+│   │   ├── voice_agent.py
+│   │
+│   ├── db/
+│   │   └── db.py
+│   │
+│   ├── ingestion/
+│   │   ├── chunker.py
+│   │   ├── embedder.py
+│   │   ├── processor.py
+│   │
+│   ├── llm/
+│   │   └── groq_client.py
+│   │
+│   ├── output/
+│       ├── audio/
+│       ├── images/
+│
+└── .vscode/
+    └── settings.json
+```
+
+---
+
+## 🤖 Multi-Agent Architecture
+
+The system uses specialized AI agents:
+
+### Collector Agents
+- Query generation  
+- Search & scraping  
+- Response validation  
+
+### Categoriser Agents
+- Clustering articles  
+- Generating summaries  
+- Decision making  
+
+### StoryArc Agents
+- Script generation  
+- Voice synthesis  
+- Visual generation  
+- Engagement optimization  
+
+---
+
+## 🔄 Workflow Pipeline
+
+```
+News Sources
+   ↓
+Collector Agents
+   ↓
+Raw Articles Database
+   ↓
+Categoriser Agents
+   ↓
+Clustered + Summarized Data
+   ↓
+StoryArc Agents
+   ↓
+Scripts → Audio → Visuals
+   ↓
+Final News Reel / Insights
+```
+
+---
+
+## 🛠️ Technologies Used
+
+- Python  
+- FAISS  
+- LLMs (Groq / OpenAI-compatible)  
+- Web Scraping  
+- Flask / Scheduler  
+- Multi-Agent Systems  
+
+---
+
+## ⚙️ Installation
+
+```bash
+git clone <your-repo-url>
+cd ET Ai Hackathon
+pip install -r requirements.txt
+```
+
+Also install:
+```
+news_categoriser/requirments.txt
+news_navigator_storyarc_newsreel/requirments.txt
+```
+
+---
+
+## ▶️ Running the Project
+
+### Run Full Pipeline
+```bash
+run_all.bat
+```
+
+### Run Individually
+
+Collector:
+```bash
+cd news_collector
+python collector_main.py
+```
+
+Categoriser:
+```bash
+cd news_categoriser
+python categoriser_main.py
+```
+
+StoryArc:
+```bash
+cd news_navigator_storyarc_newsreel
+python app.py
+```
+
+---
+
+## 📊 Features
+
+- Multi-agent AI architecture  
+- News clustering using embeddings  
+- FAISS-based similarity search  
+- Short + deep summaries  
+- Timeline-based storytelling  
+- Audio + visual generation  
+- Automated scheduling  
+
+---
+
+## ⚠️ Known Issues
+
+- Duplicate requirements file naming  
+- Temporary audio files not cleaned  
+- .pyc files should be ignored  
+
+---
+
+## 🔮 Future Improvements
+
+- Docker support  
+- Real-time dashboard  
+- Personalization engine  
+- Microservices architecture  
+
+---
+
+## 👨‍💻 Author
+
+Shibam Mandal  
+B.Tech Cybersecurity | AI Systems Developer  
+
+---
+
+## ⭐ Contributing
+
+Feel free to fork and contribute!
 ---
 
 ##  Installation & Setup
