@@ -50,7 +50,10 @@ The system is divided into three core subsystems:
 - Generates story timelines  
 - Produces video/news reels
 
-- ![System Architecture](/architecture.png)
+- ![System Architecture](/architecture1.png)
+- ![News_Processing_Pipeline](/News_processing_pipeline.png)
+- ![Deployment Architecture](/Deployment_architecture.png)
+- ![Error handling](/Error_handling.png)
 
 ---
 
