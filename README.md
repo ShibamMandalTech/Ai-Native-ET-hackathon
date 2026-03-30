@@ -103,9 +103,58 @@ Before running the project natively, ensure your machine meets the following env
 3. **Ollama (Optional but Recommended)**: If you intend to use local LLM fallback mechanisms when cloud models fail (as defined in the code), you need the [Ollama local server](https://ollama.com/) running on port `11434`.
 
 ---
-### File Structure
-# 🧠 NewsNavigator & StoryArc System  
-### AI-Powered Multi-Agent News Intelligence & Storytelling Platform
+## ⚙️ Installation
+
+```bash
+git clone https://github.com/ShibamMandalTech/Ai-Native-ET-hackathon.git
+cd ET Ai Hackathon
+pip install -r requirements.txt
+```
+
+---
+
+## ▶️ Running the Project
+
+### Run Full Pipeline (Will run all terminal together)
+```bash
+run_all.bat
+```
+
+### Run Individually(if ant to run manually)
+
+Collector:
+```bash
+cd news_collector
+python collector_main.py
+```
+
+Categoriser:
+```bash
+cd news_categoriser
+python categoriser_main.py
+
+New Terminal
+cd news_categoriser
+python worker.py
+```
+
+StoryArc:
+```bash
+cd news_navigator_storyarc_newsreel
+python app.py
+
+New Terminal
+cd news_navigator_storyarc_newsreel
+python run_processor.py
+
+New Terminal
+cd news_navigator_storyarc_newsreel
+python scheduler.py
+
+New Terminal
+cd news_navigator_storyarc_newsreel
+python scheduler2.py
+```
 
 ---
 
@@ -308,50 +357,7 @@ Final News Reel / Insights
 
 ---
 
-## ⚙️ Installation
 
-```bash
-git clone <your-repo-url>
-cd ET Ai Hackathon
-pip install -r requirements.txt
-```
-
-Also install:
-```
-news_categoriser/requirments.txt
-news_navigator_storyarc_newsreel/requirments.txt
-```
-
----
-
-## ▶️ Running the Project
-
-### Run Full Pipeline
-```bash
-run_all.bat
-```
-
-### Run Individually
-
-Collector:
-```bash
-cd news_collector
-python collector_main.py
-```
-
-Categoriser:
-```bash
-cd news_categoriser
-python categoriser_main.py
-```
-
-StoryArc:
-```bash
-cd news_navigator_storyarc_newsreel
-python app.py
-```
-
----
 
 ## 📊 Features
 
