@@ -59,7 +59,7 @@ Creates visuals using image APIs
 Combines everything using FFmpeg/MoviePy
 ```
 This enables automated, scalable news storytelling in video format, making content more engaging and accessible.
-- ![WebPage](/News Reels.jpeg)
+- ![WebPage](/News_Reels.jpeg)
 
 ---
 ### Unique Data Storage Architecture
