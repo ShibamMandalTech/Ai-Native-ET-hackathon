@@ -1,8 +1,98 @@
 #  NewsNavigator System (ET AI Hackathon)
 
-Welcome to the **NewsNavigator** and **StoryArc** ecosystem! This multi-agent AI system crawls, categorizes, and serves high-quality financial & news insights. It features a robust multi-LLM architecture, a dynamic Flask web dashboard, automated video generation pipelines, and local FAISS vector store searching.
+Welcome to the **NewsNavigator ,** **StoryArc** **and NewsReels**ecosystem! This multi-agent AI system crawls, categorizes, and serves high-quality financial & news insights. It features a robust multi-LLM architecture, a dynamic Flask web dashboard, automated video generation pipelines, and local FAISS vector store searching.
+
+##### We built an AI-native news intelligence system that transforms fragmented articles into evolving story narratives, personalized insights, and automated video briefings
+#### This is NOT just News app - It's an AI-native way to understand information and personalise intelligently for user.
+This is not just a news application — it is an AI-native intelligence system that transforms fragmented information into evolving story narratives, delivering personalized insights tailored to each user’s context, interests, and intent.
+
+
+
+
 
 ---
+## Project Summary: News Navigator Ecosystem
+
+The News Navigator Ecosystem is an AI-powered, multi-agent system designed to transform raw news into structured intelligence, interactive insights, and engaging multimedia experiences. Instead of treating news as isolated articles, the system organizes information into context-aware story flows, interactive briefings, and visual narratives.
+
+The architecture is modular and distributed, with specialized agents handling collection, classification, clustering, insight generation, and content rendering.
+
+### 1. News Navigator (Interactive News Briefings)
+
+The News Navigator module focuses on delivering interactive and query-driven news exploration. It enables users to:
+```
+Perform semantic search using FAISS-based embeddings
+Retrieve context-aware results instead of keyword matches
+Explore news through interactive briefings, where multiple related articles are summarized and presented dynamically
+```
+This transforms traditional news reading into a conversational and exploratory experience, allowing users to quickly understand topics without reading dozens of articles.
+- ![WebPage](/news_brief1.jpeg)
+![WebPage](/news_brief2.jpeg)
+- ![WebPage](/news_brief3.jpeg)
+![WebPage](/news_brief4.jpeg)
+
+---
+### 2. StoryArc (Cluster Intelligence Engine)
+
+StoryArc is the intelligence layer responsible for identifying and tracking evolving news stories.
+```
+Groups related articles into semantic clusters
+Maintains cluster state over time (story evolution)
+Generates:
+Summaries
+Timelines
+Key insights
+```
+Unlike simple aggregation, StoryArc provides a holistic view of an event, showing how a story develops across sources and time.
+- ![WebPage](/Story_arc1.jpeg)
+![WebPage](/Story_arc2.jpeg)
+
+---
+### 3. Video Intelligence Pipeline
+
+The Video Intelligence module converts structured news clusters into AI-generated videos:
+```
+Selects important clusters
+Generates scripts using LLMs
+Produces voiceovers via TTS
+Creates visuals using image APIs
+Combines everything using FFmpeg/MoviePy
+```
+This enables automated, scalable news storytelling in video format, making content more engaging and accessible.
+- ![WebPage](/News Reels.jpeg)
+
+---
+### Unique Data Storage Architecture
+
+A key innovation of the system is its hybrid storage design, optimized for AI workloads:
+```
+MySQL (Relational Layer)
+    Stores structured entities like articles, clusters, insights, and video metadata.
+FAISS (Vector Layer)
+    Stores embeddings for semantic similarity search, enabling fast and intelligent retrieval.
+State Files (JSON)
+    Tracks cluster evolution (cluster_state.json), allowing incremental updates without recomputation.
+Filesystem (Media Storage)
+    Handles large video/audio/image files efficiently without overloading the database.
+```
+---
+### Why This Architecture is Powerful
+```
+⚡ Combines SQL + Vector Search → hybrid intelligence
+🔄 Supports real-time incremental processing
+🧠 Built for AI-native workflows (embeddings, clustering)
+📊 Enables both structured queries and semantic exploration
+🎥 Efficient handling of large-scale media generation
+🌍 Vision
+```
+---
+### The system redefines news consumption by moving from article-based reading to:
+
+Interactive briefings (News Navigator)
+Story-level understanding (StoryArc)
+Multimedia storytelling (Video Intelligence)
+
+Together, these create a complete AI-driven news experience that is intelligent, contextual, and engaging.
 
 ## 🛠 Prerequisites
 
@@ -292,12 +382,7 @@ python app.py
 
 ---
 
-## 👨‍💻 Author
 
-Shibam Mandal  
-B.Tech Cybersecurity | AI Systems Developer  
-
----
 
 ## ⭐ Contributing
 
@@ -357,3 +442,11 @@ Once the components are running, the web frontend will be served locally.
 
 ##  Stopping the Application
 Because `run_all.bat` spawns multiple independent CMD instances, stopping the project requires you to **close all 7 popup CMD windows** manually. Do not leave the schedulers or workers running silently in the background if you are actively editing SQLite/FAISS DB files.
+
+---
+## 👨‍💻 Author
+
+Shibam Mandal  
+B.Tech Computer Science and Engineering (Internet of Things and Cybersecurity including Blockchain Technology) | AI Systems Developer  
+
+
