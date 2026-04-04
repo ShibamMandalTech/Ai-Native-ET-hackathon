@@ -115,6 +115,8 @@ pip install -r requirements.txt
 
 ## ▶️ Running the Project
 
+## Create the database in sql by running codes in SQL folder
+
 ### Run Full Pipeline (Will run all terminal together)
 ```bash
 run_all.bat
